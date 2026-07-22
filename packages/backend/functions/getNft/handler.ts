@@ -7,7 +7,7 @@ export const main = async (): Promise<any> => {
   const params = {
     TableName: process.env.NFT_TABLE_NAME,
     ExpressionAttributeValues: {
-      ':pk': { S: 'Nft' },
+      ':pk': { S: 'NFT' },
     },
     KeyConditionExpression: 'PK = :pk ',
   };
