@@ -1,20 +1,14 @@
-import { App, RemovalPolicy, Stack } from 'aws-cdk-lib';
-import { AttributeType, BillingMode, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { App, Stack } from 'aws-cdk-lib';
 
-import { PARTITION_KEY, SORT_KEY } from './dynamoDB';
+import { createNFTTable } from './tables';
 
 const app = new App();
 const stack = new Stack(app);
 
-const table = new Table(stack, 'NFTtable', {
-  partitionKey: { name: PARTITION_KEY, type: AttributeType.STRING },
-  sortKey: { name: SORT_KEY, type: AttributeType.STRING },
-  billingMode: BillingMode.PAY_PER_REQUEST,
-  removalPolicy: RemovalPolicy.DESTROY,
-});
+const nftTable = createNFTTable(stack);
 
-export const tableArn = stack.resolve(table.tableArn);
-export const tableName = stack.resolve(table.tableName);
+export const nftTableArn = stack.resolve(nftTable.tableArn);
+export const nftTableName = stack.resolve(nftTable.tableName);
 
 /**
  * Do not keep 'Rules' nor 'Parameters' to avoid the following errors (without resorting to cdk bridge plugin):
@@ -23,4 +17,6 @@ export const tableName = stack.resolve(table.tableName);
  *   Error:
  *   Unable to fetch parameters [/cdk-bootstrap/hnb659fds/version] from parameter store for this account.
  */
-export const resources = { Resources: app.synth().getStackByName(stack.stackName).template.Resources };
+export const resources = {
+  Resources: app.synth().getStackByName(stack.stackName).template.Resources,
+};

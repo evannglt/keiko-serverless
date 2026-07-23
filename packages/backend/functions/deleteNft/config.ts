@@ -1,14 +1,20 @@
 import { getHandlerPath } from 'libs/configHelper/getHandlerPath';
-import { nftTableDynamoDBDeletePolicies } from 'resources/policies';
+import {
+  nftTableDynamoDBDeletePolicies,
+  nftTableDynamoDBUpdatePolicies,
+} from 'resources/policies';
 
 export const deleteNft = {
-  iamRoleStatements: [nftTableDynamoDBDeletePolicies],
+  iamRoleStatements: [
+    nftTableDynamoDBDeletePolicies,
+    nftTableDynamoDBUpdatePolicies,
+  ],
   handler: getHandlerPath(__dirname),
   events: [
     {
       httpApi: {
         method: 'delete',
-        path: '/nfts/{id}',
+        path: '/nfts/{userId}/{id}',
       },
     },
   ],
