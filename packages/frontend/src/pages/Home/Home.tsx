@@ -34,17 +34,34 @@ interface ApeNFTData {
   imageIndex: number;
 }
 
+type UserScoreData = Pick<UserData, 'score'> | undefined;
+
+interface CreateNFTData {
+  nft: ApeNFTData;
+  user: UserScoreData;
+}
+
+interface DeleteNFTData {
+  user: UserScoreData;
+}
+
+interface UserData {
+  id: string;
+  score: number;
+}
+
 const ApeNFTImgs = [nft1, nft2, nft3, nft4, nft5];
 
-const randomIntFromInterval = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1) + min);
-
-const getNFTPrice = () => randomIntFromInterval(0, 100000);
-
 const Home = (): JSX.Element => {
-  const [score, setScore] = useState(0);
+  const [user, setUser] = useState<UserData | undefined>(undefined);
+  const score = user?.score ?? 0;
 
   const [apeNFTs, setApeNFTs] = useState<ApeNFTProps[]>([]);
+
+  useAsync(async () => {
+    const { data } = await client.post<UserData>('/users');
+    setUser(data);
+  });
 
   useAsync(async () => {
     const { data } = await client.get<ApeNFTData[]>('/nfts');
@@ -57,19 +74,35 @@ const Home = (): JSX.Element => {
   });
 
   const buyApeNFT = async () => {
-    const { data } = await client.post<ApeNFTData>(`/nfts`);
+    if (!user) {
+      return;
+    }
+
+    const {
+      data: { nft, user: _user },
+    } = await client.post<CreateNFTData>(`/nfts/${user.id}`);
 
     setApeNFTs(prevApeNFTs =>
-      prevApeNFTs.concat({ ...data, src: ApeNFTImgs[data.imageIndex] }),
+      prevApeNFTs.concat({ ...nft, src: ApeNFTImgs[nft.imageIndex] }),
     );
-    setScore(prevScore => prevScore - getNFTPrice());
+    setUser(prev =>
+      prev ? { ...prev, score: _user?.score ?? prev.score } : undefined,
+    );
   };
 
   const sellApeNFT = async (apeNFTId: string) => {
-    await client.delete(`/nfts/${apeNFTId}`);
+    if (!user) {
+      return;
+    }
+
+    const {
+      data: { user: _user },
+    } = await client.delete<DeleteNFTData>(`/nfts/${user.id}/${apeNFTId}`);
 
     setApeNFTs(prevApeNFTs => prevApeNFTs.filter(({ id }) => id !== apeNFTId));
-    setScore(prevScore => prevScore + getNFTPrice());
+    setUser(prev =>
+      prev ? { ...prev, score: _user?.score ?? prev.score } : undefined,
+    );
   };
   const audio = useAudio(coin, { volume: 0.8, playbackRate: 1 });
 
