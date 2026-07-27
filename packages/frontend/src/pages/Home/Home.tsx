@@ -99,17 +99,28 @@ const Home = (): JSX.Element => {
     updateUserScore(_user?.score);
   };
 
+  /**
+   * Normally, this would trigger a mutation, invalidating the right cache keys,
+   * hence triggering refresh through React Query
+   * @param apeNFTId
+   * @returns
+   */
   const sellApeNFT = async (apeNFTId: string) => {
     if (!user) {
       return;
     }
 
-    const {
-      data: { user: _user },
-    } = await client.delete<DeleteNFTData>(`/${user.id}/nfts/${apeNFTId}`);
+    const previousNFTs = apeNFTs;
+    setApeNFTs(prev => prev.filter(({ id }) => id !== apeNFTId));
 
-    setApeNFTs(prevApeNFTs => prevApeNFTs.filter(({ id }) => id !== apeNFTId));
-    updateUserScore(_user?.score);
+    try {
+      const {
+        data: { user: _user },
+      } = await client.delete<DeleteNFTData>(`/${user.id}/nfts/${apeNFTId}`);
+      updateUserScore(_user?.score);
+    } catch (error) {
+      setApeNFTs(previousNFTs);
+    }
   };
   const audio = useAudio(coin, { volume: 0.8, playbackRate: 1 });
 
