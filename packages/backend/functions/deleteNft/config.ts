@@ -14,7 +14,7 @@ export const deleteNft = {
     {
       httpApi: {
         method: 'delete',
-        path: '/nfts/{userId}/{id}',
+        path: '/{userId}/nfts/{id}',
       },
     },
   ],

@@ -14,7 +14,7 @@ export const createNft = {
     {
       httpApi: {
         method: 'post',
-        path: '/nfts/{userId}',
+        path: '/{userId}/nfts',
       },
     },
   ],

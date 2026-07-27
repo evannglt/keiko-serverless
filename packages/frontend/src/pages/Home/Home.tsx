@@ -80,7 +80,7 @@ const Home = (): JSX.Element => {
 
     const {
       data: { nft, user: _user },
-    } = await client.post<CreateNFTData>(`/nfts/${user.id}`);
+    } = await client.post<CreateNFTData>(`/${user.id}/nfts`);
 
     setApeNFTs(prevApeNFTs =>
       prevApeNFTs.concat({ ...nft, src: ApeNFTImgs[nft.imageIndex] }),
@@ -97,7 +97,7 @@ const Home = (): JSX.Element => {
 
     const {
       data: { user: _user },
-    } = await client.delete<DeleteNFTData>(`/nfts/${user.id}/${apeNFTId}`);
+    } = await client.delete<DeleteNFTData>(`/${user.id}/nfts/${apeNFTId}`);
 
     setApeNFTs(prevApeNFTs => prevApeNFTs.filter(({ id }) => id !== apeNFTId));
     setUser(prev =>
