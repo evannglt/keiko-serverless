@@ -1,7 +1,7 @@
 import { AppBar, Button, Toolbar, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import nft1 from 'assets/nft1.png';
 import nft2 from 'assets/nft2.png';
 import nft3 from 'assets/nft3.png';
@@ -73,6 +73,17 @@ const Home = (): JSX.Element => {
     );
   });
 
+  const updateUserScore = useCallback(
+    (score: number | undefined) => {
+      if (score === undefined) {
+        return;
+      }
+
+      setUser(prev => (prev ? { ...prev, score } : undefined));
+    },
+    [setUser],
+  );
+
   const buyApeNFT = async () => {
     if (!user) {
       return;
@@ -85,9 +96,7 @@ const Home = (): JSX.Element => {
     setApeNFTs(prevApeNFTs =>
       prevApeNFTs.concat({ ...nft, src: ApeNFTImgs[nft.imageIndex] }),
     );
-    setUser(prev =>
-      prev ? { ...prev, score: _user?.score ?? prev.score } : undefined,
-    );
+    updateUserScore(_user?.score);
   };
 
   const sellApeNFT = async (apeNFTId: string) => {
@@ -100,9 +109,7 @@ const Home = (): JSX.Element => {
     } = await client.delete<DeleteNFTData>(`/${user.id}/nfts/${apeNFTId}`);
 
     setApeNFTs(prevApeNFTs => prevApeNFTs.filter(({ id }) => id !== apeNFTId));
-    setUser(prev =>
-      prev ? { ...prev, score: _user?.score ?? prev.score } : undefined,
-    );
+    updateUserScore(_user?.score);
   };
   const audio = useAudio(coin, { volume: 0.8, playbackRate: 1 });
 
