@@ -1,6 +1,6 @@
 import { AWS } from '@serverless/typescript';
 
-import { resources, tableName } from './resources';
+import { resources, nftTableName } from './resources';
 import { functions } from './functions';
 
 const projectName = 'keiko-serverless';
@@ -24,7 +24,7 @@ const serverlessConfiguration: AWS = {
     environment: {
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
       NODE_OPTIONS: '--enable-source-maps --stack-trace-limit=1000',
-      NFT_TABLE_NAME: tableName,
+      NFT_TABLE_NAME: nftTableName,
     },
     httpApi: {
       payload: '2.0',

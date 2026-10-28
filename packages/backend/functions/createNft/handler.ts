@@ -1,4 +1,5 @@
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
+import { updateUserScore } from 'functions/updateUserScore/handler';
 import { randomUUID } from 'node:crypto';
 
 const randomIntFromInterval = (min: number, max: number) =>
@@ -6,11 +7,8 @@ const randomIntFromInterval = (min: number, max: number) =>
 
 const client = new DynamoDBClient({ region: 'eu-west-1' });
 
-export const main = async (): Promise<{
-  imageIndex: string;
-  positionX: string;
-  positionY: string;
-}> => {
+export const main = async (event: { pathParameters: { userId: string } }) => {
+  const userId = event.pathParameters.userId;
   const id = randomUUID();
 
   const positionX = randomIntFromInterval(5, 90).toString();
@@ -27,15 +25,24 @@ export const main = async (): Promise<{
 
   const params = {
     TableName: process.env.NFT_TABLE_NAME,
-    KeyConditionExpression: 'pk = :pk',
     Item,
   };
 
   await client.send(new PutItemCommand(params));
 
+  // Update user score
+  const user = await updateUserScore(userId, +1);
+  const score = user ? user.score : 0;
+
   return {
-    imageIndex,
-    positionX,
-    positionY,
+    nft: {
+      id,
+      imageIndex,
+      positionX,
+      positionY,
+    },
+    user: {
+      score,
+    },
   };
 };

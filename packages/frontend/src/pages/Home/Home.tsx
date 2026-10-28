@@ -1,7 +1,7 @@
 import { AppBar, Button, Toolbar, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import nft1 from 'assets/nft1.png';
 import nft2 from 'assets/nft2.png';
 import nft3 from 'assets/nft3.png';
@@ -34,17 +34,34 @@ interface ApeNFTData {
   imageIndex: number;
 }
 
+type UserScoreData = Pick<UserData, 'score'> | undefined;
+
+interface CreateNFTData {
+  nft: ApeNFTData;
+  user: UserScoreData;
+}
+
+interface DeleteNFTData {
+  user: UserScoreData;
+}
+
+interface UserData {
+  id: string;
+  score: number;
+}
+
 const ApeNFTImgs = [nft1, nft2, nft3, nft4, nft5];
 
-const randomIntFromInterval = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1) + min);
-
-const getNFTPrice = () => randomIntFromInterval(0, 100000);
-
 const Home = (): JSX.Element => {
-  const [score, setScore] = useState(0);
+  const [user, setUser] = useState<UserData | undefined>(undefined);
+  const score = user?.score ?? 0;
 
   const [apeNFTs, setApeNFTs] = useState<ApeNFTProps[]>([]);
+
+  useAsync(async () => {
+    const { data } = await client.post<UserData>('/users');
+    setUser(data);
+  });
 
   useAsync(async () => {
     const { data } = await client.get<ApeNFTData[]>('/nfts');
@@ -56,20 +73,54 @@ const Home = (): JSX.Element => {
     );
   });
 
+  const updateUserScore = useCallback(
+    (score: number | undefined) => {
+      if (score === undefined) {
+        return;
+      }
+
+      setUser(prev => (prev ? { ...prev, score } : undefined));
+    },
+    [setUser],
+  );
+
   const buyApeNFT = async () => {
-    const { data } = await client.post<ApeNFTData>(`/nfts`);
+    if (!user) {
+      return;
+    }
+
+    const {
+      data: { nft, user: _user },
+    } = await client.post<CreateNFTData>(`/${user.id}/nfts`);
 
     setApeNFTs(prevApeNFTs =>
-      prevApeNFTs.concat({ ...data, src: ApeNFTImgs[data.imageIndex] }),
+      prevApeNFTs.concat({ ...nft, src: ApeNFTImgs[nft.imageIndex] }),
     );
-    setScore(prevScore => prevScore - getNFTPrice());
+    updateUserScore(_user?.score);
   };
 
+  /**
+   * Normally, this would trigger a mutation, invalidating the right cache keys,
+   * hence triggering refresh through React Query
+   * @param apeNFTId
+   * @returns
+   */
   const sellApeNFT = async (apeNFTId: string) => {
-    await client.delete(`/nfts/${apeNFTId}`);
+    if (!user) {
+      return;
+    }
 
-    setApeNFTs(prevApeNFTs => prevApeNFTs.filter(({ id }) => id !== apeNFTId));
-    setScore(prevScore => prevScore + getNFTPrice());
+    const previousNFTs = apeNFTs;
+    setApeNFTs(prev => prev.filter(({ id }) => id !== apeNFTId));
+
+    try {
+      const {
+        data: { user: _user },
+      } = await client.delete<DeleteNFTData>(`/${user.id}/nfts/${apeNFTId}`);
+      updateUserScore(_user?.score);
+    } catch (error) {
+      setApeNFTs(previousNFTs);
+    }
   };
   const audio = useAudio(coin, { volume: 0.8, playbackRate: 1 });
 
